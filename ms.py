@@ -3,17 +3,20 @@ import struct
 import threading
 import time
 
-# Configuration
+
 # HOST = '127.0.0.1' 
 HOST = '194.58.97.193'
-PORT = 27010
-UPDATE_INTERVAL = 60  
+PORT = 27011
+UPDATE_INTERVAL = 60 
 SERVERS_FILE = 'servers.txt'  
-HEADER = b'\xff\xff\xff\xfff\n'  # Header constant
+HEADER = b'\xff\xff\xff\xfff\n' 
 
 servers = {}
 
 def load_servers_from_file():
+
+    servers.clear
+
     try:
         with open(SERVERS_FILE, 'r') as f:
             for line in f:
@@ -28,7 +31,7 @@ def load_servers_from_file():
                         'game': 'cstrike',
                         'last_update': time.time()
                     }
-        print(f"Loaded {len(servers)} servers from file.")
+        # print(f"Loaded {len(servers)} servers from file.")
     except FileNotFoundError:
         print(f"No servers file found. Starting with an empty server list.")
 
@@ -60,13 +63,10 @@ def handle_client(data, addr, server_socket):
         elif msg_type == 0x31:  
             server_list = b'\x31' + b''.join([socket.inet_aton(s['ip']) + struct.pack('!H', s['port']) for s in servers.values()])
             response = HEADER + server_list[1:]
-            # print(response)
             server_socket.sendto(response, addr)
         elif msg_type == 0x32:  
-            current_time = time.time()
-            inactive_servers = [key for key, s in servers.items() if current_time - s['last_update'] > UPDATE_INTERVAL]
-            for key in inactive_servers:
-                del servers[key]
+            print("Warning with update in msg_type = 0x32")
+            # update_servers()
             response = HEADER + b'\x32'[1:] 
             server_socket.sendto(response, addr)
         elif data.startswith(b'1\xff'):
@@ -101,12 +101,8 @@ def handle_server_list_request(data, addr, server_socket):
 def update_servers():
     while True:
         load_servers_from_file()
+        print(f"Updated servers list: {len(servers)}")
         time.sleep(UPDATE_INTERVAL)
-        current_time = time.time()
-        inactive_servers = [key for key, s in servers.items() if current_time - s['last_update'] > UPDATE_INTERVAL]
-        for key in inactive_servers:
-            del servers[key]
-        print(f"Updated server list, active servers: {len(servers)}")
 
 def start_server():
     load_servers_from_file()
@@ -115,7 +111,7 @@ def start_server():
     server_socket.bind((HOST, PORT))
     print(f"Master server listening on {HOST}:{PORT}")
 
-    # threading.Thread(target=update_servers, daemon=True).start()
+    threading.Thread(target=update_servers, daemon=True).start()
 
     while True:
         data, addr = server_socket.recvfrom(1024)
