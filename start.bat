@@ -1,0 +1,2 @@
+python ms.py
+pause
