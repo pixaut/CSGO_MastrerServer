@@ -4,9 +4,8 @@ import threading
 import time
 
 
-# HOST = '127.0.0.1' 
-HOST = '194.58.97.193'
-PORT = 27011
+HOST = '127.0.0.1' 
+PORT = 0
 UPDATE_INTERVAL = 60 
 SERVERS_FILE = 'servers.txt'  
 HEADER = b'\xff\xff\xff\xfff\n' 
